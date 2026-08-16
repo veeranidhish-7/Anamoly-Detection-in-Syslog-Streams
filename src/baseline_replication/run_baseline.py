@@ -96,5 +96,70 @@ def run_hdfs_paper_exact_protocol():
     print(f"Recall:    {r_mean:.2f}% ± {r_std:.2f}%")
     print(f"F1 Score:  {f1_mean:.2f}% ± {f1_std:.2f}%")
 
+def run_bgl_baseline():
+    print(f"\n{'='*80}")
+    print(f"Baseline Application: BGL PCA (Count-based L2-Norm)")
+    print(f"{'='*80}")
+    
+    BGL_FEATURES_COUNT = "data/BGL/preprocessed/features.npz"
+    if not os.path.exists(BGL_FEATURES_COUNT):
+        print(f"File {BGL_FEATURES_COUNT} not found.")
+        return
+
+    data = np.load(BGL_FEATURES_COUNT)
+    X_raw = data["X_counts"].astype(np.float32)
+    X = l2_normalize(X_raw)
+    y = data["y"]
+    
+    # Standard 5-fold CV on the entire normal data for BGL
+    normal_idx = np.where(y == 0)[0]
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    metrics = {"p": [], "r": [], "f1": []}
+    
+    model = PCAModel(k=6)
+    fold = 1
+    
+    for fit_n_idx, test_n_idx in kf.split(normal_idx):
+        fit_idx = normal_idx[test_n_idx]      # Use 1/5th for fitting to match HDFS scale loosely, or use 4/5ths. Let's use 4/5ths.
+        fit_idx = normal_idx[fit_n_idx]
+        test_normal_idx = normal_idx[test_n_idx]
+        test_idx = np.concatenate([test_normal_idx, np.where(y == 1)[0]])
+        
+        Xf = X[fit_idx]
+        Xt = X[test_idx]
+        y_test = y[test_idx]
+        
+        fold_model = copy.deepcopy(model)
+        print(f"Fold {fold}: Fitting on {len(Xf)} normal samples... ")
+        fold_model.fit(Xf)
+        
+        et = fold_model.predict_errors(Xt)
+        
+        # Rank-based top 5% selection
+        n_flag = int(np.ceil(0.05 * len(et)))
+        flags = np.argsort(et)[-n_flag:]
+        y_pred = np.zeros(len(et), dtype=int)
+        y_pred[flags] = 1
+        
+        p, r, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='binary', zero_division=0)
+        print(f"  -> Result: P: {p*100:.2f}%, R: {r*100:.2f}%, F1: {f1*100:.2f}%")
+        
+        metrics["p"].append(p)
+        metrics["r"].append(r)
+        metrics["f1"].append(f1)
+        fold += 1
+        
+    print("-" * 80)
+    p_mean, p_std = np.mean(metrics["p"])*100, np.std(metrics["p"])*100
+    r_mean, r_std = np.mean(metrics["r"])*100, np.std(metrics["r"])*100
+    f1_mean, f1_std = np.mean(metrics["f1"])*100, np.std(metrics["f1"])*100
+    
+    print(f"FINAL 5-FOLD CV RESULT: BGL PCA (Count-based Baseline)")
+    print(f"Precision: {p_mean:.2f}% ± {p_std:.2f}%")
+    print(f"Recall:    {r_mean:.2f}% ± {r_std:.2f}%")
+    print(f"F1 Score:  {f1_mean:.2f}% ± {f1_std:.2f}%")
+
 if __name__ == "__main__":
     run_hdfs_paper_exact_protocol()
+    # To run BGL, we uncomment the line below:
+    run_bgl_baseline()
