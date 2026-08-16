@@ -71,7 +71,7 @@ def run_bgl_autoencoder():
     print(f"{'='*80}")
     
     data = np.load(BGL_FEATURES_W2V)
-    X = data["X"]
+    X = data["X_l2"]
     y = data["y"]
     
     normal_idx = np.where(y == 0)[0]
