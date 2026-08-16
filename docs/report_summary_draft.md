@@ -1,0 +1,32 @@
+# Working Draft: Anomaly Detection Architecture Progression
+
+## Overview
+This section outlines the progression of architectures evaluated for log anomaly detection across the HDFS_v1 and BGL datasets. The objective was to evaluate the generalizability of standard linear models (PCA, RPCA) against complex system logs and to iteratively resolve their limitations using semantic embeddings and deep learning.
+
+### Attempt 1: Count-Based Linear Models (Baseline Replication)
+*   **Idea**: Replicate the original paper's baseline method, which constructs a term-frequency (or count-based) matrix of discrete log events and applies linear projection techniques (PCA, RPCA) to identify anomalies based on distance from a low-rank normal subspace.
+*   **Result (HDFS)**: The PCA model achieved 94.38% F1 (Precision: 89.35%, Recall: 100.00%), cleanly matching the paper's claimed 94.64% target. However, the RPCA model achieved only 53.96% F1 (Precision: 100.00%, Recall: 36.95%).
+*   **Result (BGL)**: Both PCA and RPCA models reached a strict performance limit of approximately 65% F1 (Precision: ~63%, Recall: ~67%).
+*   **Diagnosis**: The HDFS dataset is heavily structured and inherently low-rank, allowing PCA to excel. The RPCA model failed on HDFS due to a severe "rank-collapse" issue within the data matrix, rendering the low-rank component equivalent to the original matrix. Furthermore, the high variance and interleaving of the real-world BGL logs meant that simple event frequency counts were insufficient for linear models to establish a distinct normal subspace, resulting in the ~65% F1 limit.
+
+### Attempt 2: Sequence Order Embeddings (Semantic NLP)
+*   **Idea**: Replace the sparse count matrix with dense, continuous semantic vectors (Word2Vec) generated from the log sequences. This approach preserves the contextual meaning and order of log transitions, rather than just their occurrence frequency.
+*   **Result (HDFS)**: The dense vectors resolved the rank-collapse issue, allowing RPCA performance to recover to 84.96% F1 (Precision: 73.85%, Recall: 100.00%).
+*   **Result (BGL)**: Performance initially degraded to 44.28% F1.
+*   **Diagnosis**: Semantic embeddings successfully provided the continuous variance needed for RPCA to optimize. However, the BGL evaluation initially constructed sequences using arbitrary 5-minute time windows. Because logs from entirely independent server nodes were temporally interleaved within these windows, the resulting embeddings lacked coherent execution paths (a "semantic soup"), causing poor performance.
+
+### Attempt 3: Node-Based Semantic Grouping
+*   **Idea**: Correct the BGL sequence extraction by grouping logs structurally by their originating `Node` identifier AND a 6-hour sliding `Window_ID`, rather than purely by time. This aligns the sequences with true physical execution paths before vectorization.
+*   **Result (BGL)**: When applied to the structurally grouped Word2Vec features, PCA performance improved to 75.00% F1 (Precision: 66.26%, Recall: 86.40%), surpassing the original 65% limit.
+*   **Diagnosis**: Preserving logical execution paths is a prerequisite for sequence embedding models. The improvement demonstrated that semantic transitions provide anomaly indicators that raw counts omit.
+
+### Attempt 4: Deep Learning Autoencoder on Semantics
+*   **Idea**: Given that Word2Vec embeddings exist in a continuous, non-linear space, linear projections (PCA/RPCA) may be sub-optimal. We replaced the linear detectors with a multi-layer perceptron (MLP) Autoencoder designed to reconstruct the 32-dimensional semantic vectors.
+*   **Result (BGL)**: Under 5-fold Cross-Validation on over 1.15 million sequences, the Autoencoder achieved an average 87.46% ± 9.17% F1 (Precision: 97.27% ± 1.08%, Recall: 80.76% ± 13.84%).
+*   **Diagnosis**: The variance across folds is driven by data distribution shifts in the fitting set, not training instability (verified by deep-copying seeded weights per fold). For example, Fold 1's normal training sequences caused the POT algorithm to set a substantially higher threshold (0.6361) than Folds 2-5 (~0.40 - 0.54). This conservative threshold caused Fold 1 to under-flag anomalies, dropping recall to 53.20%, whereas the other folds achieved highly stable ~88-92% F1 scores. This highlights the Autoencoder's sensitivity to calibration data when operating in high-variance semantic spaces.
+
+### Attempt 5: Re-Evaluating the Baseline (Thresholding & Tie-Inflation)
+*   **Idea**: The original paper claims an HDFS F1 score of 94.64% using a hardcoded threshold set at the 95th percentile of normal validation error. We rigorously re-evaluated this under their exact 5-fold sampling protocol (25k normals, 1k abnormals). We also tested our own dynamic Extreme Value Theory (POT) thresholding as a separate improvement.
+*   **Result (Paper-Exact Rank-Based 5%)**: The paper's stated protocol, when corrected for tie-inflation, achieved **94.60% ± 2.30% F1** (Precision: 92.34%, Recall: 96.96%).
+*   **Result (Our POT Threshold)**: Our dynamic POT threshold achieved **95.95% ± 1.46% F1** (Precision: 93.61%, Recall: 98.46%).
+*   **Diagnosis**: Our initial attempt to apply a 95th-percentile *value* threshold failed (yielding ~70% F1) due to a "tie-inflation" bug: the PCA model produces only ~198 unique error values across 21,000 test samples. Applying a strict `error > threshold` rule on heavily tied data caused it to over-flag nearly 9% of the dataset instead of 5%. By switching to a rank-based top-5% selection, we flagged exactly 1,050 samples per fold, achieving a 94.60% F1 score that perfectly matches the paper's 94.64% claim. Furthermore, our custom POT dynamic threshold improved upon this baseline by actively modeling the tail distribution rather than forcing a strict 5% cutoff, capturing slightly more anomalies and raising the final score to nearly 96%.
