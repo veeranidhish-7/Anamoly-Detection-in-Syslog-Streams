@@ -4,6 +4,7 @@ import copy
 import numpy as np
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.model_selection import KFold
+import pickle
 
 # Add the our_contributions models folder to sys.path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -11,6 +12,8 @@ from models.deep_learning import AutoencoderModel
 from models.thresholding import compute_threshold_pot
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'baseline_replication'))
 from models.pca_rpca import PCAModel
+
+os.makedirs("saved_models_our_contributions", exist_ok=True)
 
 HDFS_FEATURES_COUNT = "data/HDFS_v1/preprocessed/features.npz"
 BGL_FEATURES_W2V = "data/BGL/preprocessed/features_w2v.npz"
@@ -48,8 +51,18 @@ def run_hdfs_pot_improvement():
         
         Xf, Xt, y_test = X[fit_idx], X[test_idx], y[test_idx]
         
-        fold_model = copy.deepcopy(model)
-        fold_model.fit(Xf)
+        model_path = f"saved_models_our_contributions/hdfs_pot_pca_fold_{fold}.pkl"
+        if os.path.exists(model_path):
+            print(f"Fold {fold}: Loading saved model from {model_path}...")
+            with open(model_path, "rb") as f:
+                fold_model = pickle.load(f)
+        else:
+            fold_model = copy.deepcopy(model)
+            fold_model.fit(Xf)
+            
+            with open(model_path, "wb") as f:
+                pickle.dump(fold_model, f)
+            print(f"  -> Model saved to {model_path}")
         
         ef = fold_model.predict_errors(Xf)
         et = fold_model.predict_errors(Xt)
@@ -86,9 +99,19 @@ def run_bgl_autoencoder():
         test_idx = np.concatenate([normal_idx[test_normal_idx], np.where(y == 1)[0]])
         Xt, y_test = X[test_idx], y[test_idx]
         
-        fold_model = copy.deepcopy(model)
-        print(f"Fold {fold}: Fitting on {len(Xf)} semantic sequences...")
-        fold_model.fit(Xf)
+        model_path = f"saved_models_our_contributions/bgl_autoencoder_fold_{fold}.pkl"
+        if os.path.exists(model_path):
+            print(f"Fold {fold}: Loading saved model from {model_path}...")
+            with open(model_path, "rb") as f:
+                fold_model = pickle.load(f)
+        else:
+            fold_model = copy.deepcopy(model)
+            print(f"Fold {fold}: Fitting on {len(Xf)} semantic sequences...")
+            fold_model.fit(Xf)
+            
+            with open(model_path, "wb") as f:
+                pickle.dump(fold_model, f)
+            print(f"  -> Model saved to {model_path}")
         
         ef = fold_model.predict_errors(Xf)
         et = fold_model.predict_errors(Xt)

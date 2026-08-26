@@ -4,10 +4,13 @@ import copy
 import numpy as np
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.model_selection import KFold
+import pickle
 
 # Add the baseline_replication models folder to sys.path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from models.pca_rpca import PCAModel
+
+os.makedirs("saved_models", exist_ok=True)
 
 HDFS_FEATURES_COUNT = "data/HDFS_v1/preprocessed/features.npz"
 
@@ -54,9 +57,19 @@ def run_hdfs_paper_exact_protocol():
         Xt = X[test_idx]
         y_test = y[test_idx]
         
-        fold_model = copy.deepcopy(model)
-        print(f"Fold {fold}: Fitting on {len(Xf)} normal samples... ")
-        fold_model.fit(Xf)
+        model_path = f"saved_models/hdfs_pca_fold_{fold}.pkl"
+        if os.path.exists(model_path):
+            print(f"Fold {fold}: Loading saved model from {model_path}...")
+            with open(model_path, "rb") as f:
+                fold_model = pickle.load(f)
+        else:
+            fold_model = copy.deepcopy(model)
+            print(f"Fold {fold}: Fitting on {len(Xf)} normal samples... ")
+            fold_model.fit(Xf)
+            
+            with open(model_path, "wb") as f:
+                pickle.dump(fold_model, f)
+            print(f"  -> Model saved to {model_path}")
         
         et = fold_model.predict_errors(Xt)
         
@@ -129,9 +142,19 @@ def run_bgl_baseline():
         Xt = X[test_idx]
         y_test = y[test_idx]
         
-        fold_model = copy.deepcopy(model)
-        print(f"Fold {fold}: Fitting on {len(Xf)} normal samples... ")
-        fold_model.fit(Xf)
+        model_path = f"saved_models/bgl_pca_fold_{fold}.pkl"
+        if os.path.exists(model_path):
+            print(f"Fold {fold}: Loading saved model from {model_path}...")
+            with open(model_path, "rb") as f:
+                fold_model = pickle.load(f)
+        else:
+            fold_model = copy.deepcopy(model)
+            print(f"Fold {fold}: Fitting on {len(Xf)} normal samples... ")
+            fold_model.fit(Xf)
+            
+            with open(model_path, "wb") as f:
+                pickle.dump(fold_model, f)
+            print(f"  -> Model saved to {model_path}")
         
         et = fold_model.predict_errors(Xt)
         

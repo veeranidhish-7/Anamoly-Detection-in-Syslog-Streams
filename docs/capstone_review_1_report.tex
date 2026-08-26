@@ -1,0 +1,181 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+\usepackage{times} % Times New Roman font
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{microtype} % Improves justification and typography
+\usepackage{booktabs}  % For professional tables
+\usepackage{float}     % For better table positioning
+\usepackage{amsmath}   % For mathematical equations
+\usepackage{setspace}  % For line spacing
+
+% Set 1.5 line spacing for report format (helps with readability and page length)
+\onehalfspacing
+\setlength{\parindent}{0pt}
+
+% Configure 16, 14, 12 rule for Headings and Text
+\titleformat{\section}
+  {\normalfont\fontsize{16}{19}\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\fontsize{14}{17}\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\fontsize{12}{15}\bfseries}{\thesubsubsection}{1em}{}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    
+    % College Logo
+    \includegraphics[width=0.5\textwidth]{vitap-logo} % Ensure you have vitap-logo.png or .jpg in the same directory
+    
+    \vspace{2cm}
+    
+    {\fontsize{18}{22}\bfseries Deep Semantic Sequence Modeling for Robust \\ Anomaly Detection in Syslog Streams \par}
+    
+    \vspace{1.5cm}
+    {\fontsize{16}{19}\bfseries Capstone Review 1 \par}
+    
+    \vspace{2.5cm}
+    
+    {\fontsize{14}{17}\bfseries Submitted by:\par}
+    \vspace{0.5cm}
+    {\fontsize{12}{15}
+    Venkata Dhanush Kakarlamudi (23BCE8172) \\
+    Veera Nidhish Gondimalla (23BCE7421) \\
+    Settipalli Raja Rushi Praneeth Reddy (23BCE7425) \\
+    Evvala Venkata Lakshmi Narasimha Veereswar (23BCE7439) \par}
+    
+    \vspace{2.5cm}
+    
+    {\fontsize{14}{17}\bfseries Submitted to:\par}
+    \vspace{0.5cm}
+    {\fontsize{12}{15}\bfseries Mohinder Singh\par}
+    
+    \vfill
+    
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Abstract}
+This project focuses on building and evaluating robust anomaly detection systems for complex system logs, a critical task for maintaining the reliability and security of large-scale distributed systems. Initially, we replicated the methodology of a recent 2025 IEEE ICSRS base paper titled "Lightweight Optimization based Log-file Anomaly Detection" by Fält et al. The base paper utilized frequency-based linear models, specifically Principal Component Analysis (PCA) and Robust Principal Component Analysis (RPCA), to establish normal behavioral baselines. 
+
+We applied these techniques to two highly distinct datasets: the well-structured Hadoop Distributed File System (HDFS\_v1) logs and the much more complex, interleaved Blue Gene/L (BGL) supercomputer logs. Our extensive evaluations indicate that while traditional count-based models work exceptionally well for simple structures, they fail significantly on highly interleaved data like BGL. To address this structural limitation, we integrated Semantic Natural Language Processing (NLP) embeddings via Word2Vec, transitioning from discrete event counting to continuous sequence modeling. Furthermore, we designed a Multi-Layer Perceptron (MLP) Autoencoder to replace the linear PCA models. This shift to deep learning successfully captured contextual execution paths, drastically improving anomaly detection performance on high-variance data. This report outlines our comprehensive methodology, experimental setup, theoretical observations, and the quantitative outcomes achieved during the first phase of our capstone project.
+
+\section{Introduction}
+
+\subsection{Background and Motivation}
+In modern computing, large-scale distributed systems and cloud infrastructures form the backbone of global digital services. As these systems grow in scale and complexity, ensuring their reliability, availability, and security becomes an increasingly difficult task. System logs---automatically generated text messages that record events happening within the software---are the most critical and ubiquitous data source for diagnosing system failures, tracking performance bottlenecks, and detecting malicious intrusions. 
+
+However, detecting anomalies in these logs is challenging because of the sheer volume of unstructured text data generated every second. Traditional approaches relied heavily on manual rule-based systems (like regular expression matching) where system administrators would define patterns to flag known errors. This manual approach is no longer feasible; it cannot scale with the volume of modern logs and is inherently incapable of detecting "zero-day" or novel anomalies that do not match predefined rules. 
+
+\subsection{Problem Statement}
+Historically, automated anomaly detection models have relied on basic frequency counts of log events. After parsing raw text logs into structured templates (e.g., "Connection closed by IP {*}"), algorithms generate feature matrices based on the frequency of each template in a given time window or session. 
+
+While these linear, count-based approaches---such as PCA---are effective on straightforward, highly structured logs (like HDFS), they mathematically project well into lower dimensions only when the data is orderly. However, they struggle profoundly with complex datasets. In real-world environments like the BGL supercomputer, event frequencies alone cannot accurately capture the sequential meaning of execution paths. Multiple processes interleave their logs simultaneously across thousands of nodes, creating a chaotic "semantic soup" if grouped purely by time. 
+
+Our project addresses this critical gap. We aim to overcome the limitations of standard linear models by shifting from simple word counts to advanced semantic sequence modeling, enabling more robust anomaly detection in high-variance, interleaved log environments.
+
+\section{Literature Review and Related Work}
+The landscape of log anomaly detection has evolved rapidly over the past decade. Early machine learning approaches focused heavily on unsupervised linear methods. The base paper for our study (Fält et al., 2025) highlights the use of PCA and RPCA as lightweight, optimization-based techniques. These models operate on the assumption that normal log sequences occupy a low-dimensional subspace, while anomalous events project far away from this space.
+
+Subsequent research has identified the brittleness of these linear projections. Researchers found that count-based matrices (like Term Frequency-Inverse Document Frequency, or TF-IDF) discard the chronological order of log events. In a system, the sequence \texttt{[Login, Error, Logout]} has a vastly different operational meaning than \texttt{[Error, Login, Logout]}, yet a count-based model views them identically.
+
+To counter this, recent literature has pivoted towards Deep Learning and Natural Language Processing (NLP). Log messages share many characteristics with natural human language. By treating log templates as "words" and execution sequences as "sentences," models can utilize embeddings like Word2Vec to capture semantic similarities between log events. Deep learning architectures, such as Autoencoders, LSTMs (Long Short-Term Memory networks), and Transformers, can then learn the non-linear boundaries of normal system behavior. Our project builds upon this transition, specifically evaluating where the boundary lies between needing a simple linear model versus a complex deep learning architecture.
+
+\section{Methodology and Architecture}
+Our workflow up to Review 1 was meticulously divided into multiple experimental phases to diagnose limitations in existing architectures and implement targeted improvements.
+
+\subsection{Phase 1: Baseline Replication (PCA and RPCA)}
+We began by strictly replicating the base paper's methodology. The preprocessing pipeline involves parsing raw logs into discrete event IDs and grouping them into sessions (e.g., by \texttt{block\_id} for HDFS). We then generate a term-frequency matrix, where each row represents a session and each column represents the count of a specific log event.
+
+We implemented Principal Component Analysis (PCA) to find the principal axes of normal behavior. Anomalies are detected by calculating the Squared Prediction Error (SPE)---the distance between the original sequence and its reconstruction from the principal components. We also implemented Robust PCA (RPCA), which mathematically separates the observation matrix into a low-rank matrix (normal behavior) and a sparse matrix (anomalies). 
+
+\subsection{Phase 2: Semantic Embeddings via Word2Vec}
+To address the fact that frequency counts ignore temporal order, we introduced Word2Vec embeddings. Instead of counting events, we mapped each log event ID to a dense, continuous, 32-dimensional vector. These vectors are trained such that log events that frequently occur in the same context are placed close together in the vector space. A log sequence is then represented as the average (or sequential representation) of its constituent event vectors. This transition allowed our models to "understand" the semantic meaning of log transitions rather than just their frequency.
+
+\subsection{Phase 3: Structural Node-Based Grouping}
+Applying semantic embeddings to the BGL dataset initially yielded poor results. We identified the root cause as the grouping strategy. The standard approach was grouping logs by a sliding 5-minute time window. On a supercomputer with thousands of independent nodes, a single 5-minute window contains interleaved logs from entirely unrelated processes, destroying any logical execution path.
+
+We resolved this by implementing structural node-based grouping. We refactored our extraction pipeline to group logs strictly by their originating \texttt{Node} identifier combined with a sliding window. This ensured that the sequences fed into our Word2Vec model represented true physical execution paths of a single processor, drastically improving the coherence of the data.
+
+\subsection{Phase 4: Multi-Layer Perceptron Autoencoder}
+Linear PCA is fundamentally limited when dealing with the continuous, non-linear space generated by Word2Vec embeddings. To fully leverage the semantic vectors, we developed a Deep Learning Autoencoder. An Autoencoder is an unsupervised neural network designed to compress data into a latent bottleneck and reconstruct it. The network is trained exclusively on normal data. During inference, when an anomalous sequence is processed, the network struggles to reconstruct it, resulting in a high Mean Squared Error (MSE), which we use as our anomaly score. Our architecture consists of multiple dense layers with ReLU activation functions and Dropout layers for regularization.
+
+\subsection{Phase 5: Dynamic Thresholding (POT Algorithm)}
+A significant flaw in the base paper was its reliance on a hardcoded, static error threshold (e.g., the 95th percentile). In a real-world deployment, the percentage of anomalies is unknown, making hardcoded thresholds useless. To solve this, we implemented the Peaks-Over-Threshold (POT) algorithm, rooted in Extreme Value Theory. POT dynamically models the tail end of the reconstruction error distribution and mathematically determines the optimal cutoff threshold for anomalies. This creates a fully automated, deployable pipeline that requires zero oracle knowledge of the dataset.
+
+\section{Experimental Setup and Evaluation}
+
+\subsection{Datasets}
+We utilized two distinct, publicly available datasets to ensure a comprehensive evaluation:
+\begin{itemize}
+    \item \textbf{HDFS\_v1 Dataset:} Generated from a Hadoop cluster, containing approximately 11.1 million log lines. These logs are highly structured and can be cleanly grouped by a unique \texttt{block\_id}. It serves as our baseline for a "simple" logging environment.
+    \item \textbf{BGL Dataset:} Collected from the Blue Gene/L supercomputer at Lawrence Livermore National Labs, containing 4.7 million log lines. This dataset is notoriously complex, highly interleaved, and lacks straightforward session identifiers, representing a "chaotic" real-world environment.
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+We evaluated our models using standard classification metrics:
+\begin{itemize}
+    \item \textbf{Precision:} The ratio of correctly predicted anomalies to the total predicted anomalies. High precision means very few false alarms.
+    \item \textbf{Recall:} The ratio of correctly predicted anomalies to all actual anomalies. High recall means we are catching most of the true system failures.
+    \item \textbf{F1-Score:} The harmonic mean of Precision and Recall. This is our primary metric, as anomaly detection datasets are highly imbalanced (normal logs vastly outnumber anomalous ones).
+\end{itemize}
+
+\section{Results and Comparative Analysis}
+Our extensive experiments yielded clear insights into the capabilities and limitations of each architecture. Table \ref{tab:results} summarizes the F1-scores achieved across different methodologies.
+
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Model / Architecture} & \textbf{HDFS\_v1 Dataset} & \textbf{BGL Dataset} \\
+        \hline
+        Base Paper PCA (Claimed) & 94.64\% & Not Evaluated \\
+        Base Paper RPCA (Claimed) & 90.55\% & Not Evaluated \\
+        \hline
+        Our PCA Baseline (Replicated) & 94.65\% & 30.18\% \\
+        Our RPCA Baseline (Replicated) & 87.16\% & - \\
+        Our PCA with Optimal Oracle Threshold & - & $\sim$65.00\% \\
+        \hline
+        Our PCA with Node-Grouped Semantic NLP & 84.96\% & 75.00\% \\
+        \textbf{Our Deep Learning Autoencoder} & - & \textbf{87.46\%} \\
+        Our PCA with Dynamic POT Thresholding & \textbf{95.95\%} & - \\
+        \hline
+    \end{tabular}
+    \vspace{0.2cm}
+    \caption{Comparison of F1-scores between base paper claims and our experimental implementations.}
+    \label{tab:results}
+\end{table}
+
+\subsection{Discussion of HDFS Results}
+On the structured HDFS dataset, the simple count-based PCA model performed exceptionally well, achieving an F1-score of 94.65\%. When we applied our dynamic POT thresholding, this improved further to 95.95\%. We observed that HDFS log counts map tightly to a very low-dimensional space. Introducing complex semantic embeddings here actually caused slight performance degradation, confirming that simple tools are best for simple data.
+
+\subsection{Discussion of BGL Results}
+The BGL dataset exposed the fatal flaws of count-based linear models. The baseline PCA completely collapsed, achieving a meager 30.18\% F1-score. This occurs because the interleaved logs create a high intrinsic variance; there is no single "low-dimensional" plane of normal behavior. 
+
+By restructuring the data extraction by node and applying semantic Word2Vec embeddings, we raised the PCA ceiling to 75.00\%. Finally, when we replaced the linear PCA with our non-linear Deep Learning Autoencoder, the model achieved an 87.46\% F1-score. The deep neural network successfully learned the complex, high-dimensional boundaries of normal supercomputer execution paths, proving its necessity for real-world deployments.
+
+\section{Conclusion}
+The experiments conducted in this first phase have established a clear dataset-dependency rule for log anomaly detection. For highly structured, low-rank logs (like HDFS), simple linear PCA on normalized frequency counts represents a mathematical ceiling; deploying deep learning in such scenarios introduces unnecessary computational overhead and can even cause false positives. 
+
+Conversely, for complex, highly interleaved logs (like BGL), frequency-count models mathematically collapse. Transitioning to node-based semantic embeddings combined with deep learning autoencoders enables the system to comprehend actual contextual flows and non-linear paths. This approach leads to highly robust anomaly detection that completely shatters the limitations of traditional linear models, making it the definitive path forward for complex infrastructure.
+
+\section{Future Scope \& Roadmap}
+Moving forward toward the next review cycles, our roadmap focuses on refining and scaling our deep learning approach. Our planned strategic explorations include:
+\begin{enumerate}
+    \item \textbf{Advanced Sequence Modeling:} We will explore deeper sequence models, specifically Long Short-Term Memory networks (LSTMs) and Attention-based Transformers. These architectures are designed specifically for sequential data and may capture long-range log dependencies much more effectively than simple Word2Vec aggregations.
+    \item \textbf{Addressing Data Leakage \& Feature Engineering:} We will ensure rigorous isolation between the data used to train the Word2Vec embeddings and the evaluation data. Addressing potential data leakage at the embedding level is critical to guarantee true out-of-sample generalization.
+    \item \textbf{Alternative Non-Linear Architectures:} If the current Autoencoder encounters performance bottlenecks, we will investigate complementary paradigms such as contrastive learning or self-supervised anomaly frameworks.
+    \item \textbf{Real-Time Feasibility and MLOps:} Ultimately, these models must operate on live data. We will optimize the inference time of the deep learning architectures and explore deployment strategies to ensure they are viable for high-throughput, real-time log streams.
+\end{enumerate}
+
+\end{document}
