@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Anomaly Detection in Syslog Streams&colon; A Comparative Evaluation of Linear and Deep Learning Architectures</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <span id="markdown-mermaid" aria-hidden="true" data-config="{&quot;darkModeTheme&quot;:&quot;vscode&quot;,&quot;lightModeTheme&quot;:&quot;vscode&quot;,&quot;maxTextSize&quot;:50000,&quot;clickDrag&quot;:&quot;alt&quot;,&quot;showControls&quot;:&quot;onHoverOrFocus&quot;,&quot;resizable&quot;:true,&quot;maxHeight&quot;:&quot;&quot;}"></span>
+				<h1 id="anomaly-detection-in-syslog-streams-a-comparative-evaluation-of-linear-and-deep-learning-architectures">Anomaly Detection in Syslog Streams: A Comparative Evaluation of Linear and Deep Learning Architectures</h1>
+<p><strong>Capstone Review 1 Document</strong></p>
+<p><strong>Team Members:</strong></p>
+<ul>
+<li>Venkata Dhanush Kakarlamudi (23BCE8172)</li>
+<li>Veera Nidhish Gondimalla (23BCE7421)</li>
+<li>S Raja Rushi Praneeth Reddy (23BCE7425)</li>
+<li>E Venakata Lakshmi Veereswar (23BCE7439)</li>
+</ul>
+<hr>
+<h2 id="1-abstract">1. Abstract</h2>
+<p>The goal of this project is to develop and evaluate robust architectures for log anomaly detection across different log datasets. Initial phases of the project involved replicating standard frequency-based linear models such as Principal Component Analysis (PCA) and Robust Principal Component Analysis (RPCA) on structured logs from the Hadoop Distributed File System (HDFS) and complex, real-world interleaved logs from the Blue Gene/L (BGL) supercomputer. The results established the brittleness of traditional count-based models on complex data. Subsequently, the project explored Semantic Natural Language Processing (NLP) embeddings (Word2Vec) and Deep Learning Autoencoders to capture contextual execution paths, significantly improving detection performance. This report outlines the progression of these methodologies and experiments conducted up to Review 1.</p>
+<h2 id="2-introduction--problem-statement">2. Introduction &amp; Problem Statement</h2>
+<p>System logs are a critical data source for monitoring the health and security of large-scale distributed systems. However, detecting anomalies in these logs is challenging due to the massive volume of data, the unstructured nature of log messages, and the complex interleaving of processes.</p>
+<p>Traditional approaches often rely on count-based matrices (term-frequency) of discrete log events. While these work well for highly structured, low-rank data, they fail to capture the sequential and semantic context of log execution paths. Our problem statement focuses on overcoming the limitations of these count-based linear models when applied to complex, high-variance datasets like BGL, where simple event frequencies are insufficient to establish a distinct normal operational subspace.</p>
+<h2 id="3-progress-till-review-1-methodology--experiments">3. Progress Till Review 1: Methodology &amp; Experiments</h2>
+<p>Our workflow till Review 1 has been broken down into five major experimental phases to iteratively diagnose limitations and improve the architecture.</p>
+<h3 id="phase-1-baseline-replication-count-based-linear-models">Phase 1: Baseline Replication (Count-Based Linear Models)</h3>
+<ul>
+<li><strong>Method:</strong> We replicated standard baseline methods constructing a term-frequency matrix of discrete log events and applied linear projection techniques (PCA, RPCA).</li>
+<li><strong>HDFS Dataset:</strong> PCA achieved an F1-score of 94.38%, cleanly matching expected targets on highly structured, low-rank data. However, RPCA suffered a severe &quot;rank-collapse,&quot; yielding only 53.96% F1.</li>
+<li><strong>BGL Dataset:</strong> When tested on the strict, complex BGL dataset, the PCA baseline collapsed entirely to <strong>30.18% F1</strong>. Even with an oracle threshold sweep, the model reached a strict theoretical ceiling of ~65% F1, proving that the linear approach is fundamentally inadequate for highly interleaved logs.</li>
+</ul>
+<h3 id="phase-2-sequence-order-embeddings-semantic-nlp">Phase 2: Sequence Order Embeddings (Semantic NLP)</h3>
+<ul>
+<li><strong>Method:</strong> To solve the rank-collapse and capture sequence meaning, we replaced sparse count matrices with dense, continuous semantic vectors (Word2Vec).</li>
+<li><strong>Results:</strong> On HDFS, the dense vectors resolved the rank-collapse, allowing RPCA to recover to 84.96% F1. On BGL, however, performance initially degraded due to the temporal extraction of logs creating a &quot;semantic soup&quot; of interleaved server node outputs.</li>
+</ul>
+<h3 id="phase-3-structural-node-based-grouping">Phase 3: Structural Node-Based Grouping</h3>
+<ul>
+<li><strong>Method:</strong> We corrected the BGL log extraction process. Instead of grouping arbitrarily by time, we grouped logs logically by their originating <code>Node</code> identifier and a 6-hour sliding <code>Window_ID</code>.</li>
+<li><strong>Results:</strong> This aligned the sequences with true physical execution paths. PCA performance on these structurally grouped embeddings improved significantly to <strong>75.00% F1</strong>, bypassing the previous 65% ceiling and proving the value of semantic transitions.</li>
+</ul>
+<h3 id="phase-4-deep-learning-autoencoder-on-semantics">Phase 4: Deep Learning Autoencoder on Semantics</h3>
+<ul>
+<li><strong>Method:</strong> Linear projections (PCA/RPCA) are sub-optimal for non-linear continuous embedding spaces. We replaced them with a multi-layer perceptron (MLP) Autoencoder designed to reconstruct the 32-dimensional semantic vectors.</li>
+<li><strong>Results:</strong> Under a rigorous 5-fold cross-validation on over 1.15 million sequences, the Autoencoder achieved an average <strong>87.46% F1-score</strong>.</li>
+</ul>
+<h3 id="phase-5-re-evaluating-the-baseline-with-dynamic-peaks-over-threshold-pot">Phase 5: Re-Evaluating the Baseline with Dynamic Peaks-Over-Threshold (POT)</h3>
+<ul>
+<li><strong>Method:</strong> We re-evaluated the hardcoded 95th-percentile threshold from standard literature, discovering a &quot;tie-inflation&quot; bug in standard rank-based error metrics. To fix this, we implemented dynamic Extreme Value Theory via Peaks-Over-Threshold (POT).</li>
+<li><strong>Results:</strong> Our dynamic POT threshold raised the baseline performance on HDFS to an impressive <strong>95.95% F1</strong>, actively modeling the tail distribution rather than forcing a strict percentage cutoff.</li>
+</ul>
+<h2 id="4-conclusion-of-phase-1">4. Conclusion of Phase 1</h2>
+<p>The experiments up to this point have definitively shown that standard frequency-count linear models are brittle and fail on complex, interleaved system logs. Shifting to semantic NLP embeddings paired with Deep Learning (Autoencoders) allows the system to understand the actual contextual flow of logs, leading to highly robust anomaly detection. However, the model still shows sensitivity to threshold calibration and potential data distribution shifts, which will need to be addressed in subsequent phases.</p>
+<h2 id="5-future-scope--roadmap-for-review-2--3">5. Future Scope &amp; Roadmap (For Review 2 &amp; 3)</h2>
+<p>As we progress toward the next review cycles, the architecture will remain flexible for significant strategic pivots. Planned explorations include:</p>
+<ol>
+<li><strong>Advanced Sequence Modeling:</strong> Investigating whether deeper sequence models (like Transformers, Long Short-Term Memory networks (LSTMs), or Small Language Models (SLMs)) can capture long-range dependencies better than simple Word2Vec aggregations.</li>
+<li><strong>Addressing Data Leakage &amp; Feature Engineering:</strong> Ensuring strict isolation between training embeddings and evaluation data to guarantee robust out-of-sample performance.</li>
+<li><strong>Alternative Architectures:</strong> Remaining open to entirely new paradigms, such as contrastive learning or self-supervised anomaly detection, should the Autoencoder hit a performance plateau.</li>
+<li><strong>Real-Time Feasibility:</strong> Evaluating the inference time of the chosen deep learning architectures for live log streams.</li>
+</ol>
+
+            
+            
+        </body>
+        </html>
