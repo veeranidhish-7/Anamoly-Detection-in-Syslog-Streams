@@ -104,72 +104,72 @@
 * Practiced answering anticipated reviewer questions and delivered the final presentation.
 
 **Tasks Planned for next week:**
-* Review project feedback from Review 2 and plan future architectural enhancements.
-* Investigate transitioning evaluation from prototype balanced data to natural operational prevalence.
+* Review the feedback given by the review panel and identify areas to improve.
+* Work on testing the model in more realistic, real-world conditions instead of simplified test sets.
 
 ---
 
 ## Week 10 (October 6 - October 12)
 **Tasks Completed:**
-* Evaluated Review 2 feedback and transitioned testing methodology from prototype balanced sets to natural operational base-rate prevalence (10.07%).
-* Designed a strict stratified 10-fold cross-validation scheme ensuring pure normal training with zero anomaly exposure.
+* Analyzed the panel feedback and updated our testing strategy to reflect real-world anomaly rates.
+* Set up a proper training pipeline that trains only on normal system logs without seeing any anomalies.
 
 **Tasks Planned for next week:**
-* Upgrade the log window feature representation from single pooling to dual Mean+Max pooling.
-* Re-architect the autoencoder to accommodate higher-dimensional semantic embeddings.
+* Improve the log feature extraction so the model can catch both normal background activity and sudden error bursts.
+* Upgrade the Autoencoder architecture to better learn these richer log features.
 
 ---
 
 ## Week 11 (October 13 - October 19)
 **Tasks Completed:**
-* Implemented 64-dimensional dual Mean+Max semantic pooling to capture both operational baseline context and rare error bursts.
-* Built and optimized a 5-layer regularized bottleneck Autoencoder (64 -> 32 -> 16 -> 32 -> 64) with L2 weight decay to prevent overfitting.
+* Improved the feature extraction using both average and peak pooling to capture rare error signals.
+* Redesigned and tuned a deeper Autoencoder network with regularization to prevent overfitting on routine logs.
 
 **Tasks Planned for next week:**
-* Formulate and integrate autonomous Extreme Value Theory (POT) thresholding to eliminate manual threshold selection.
-* Run full 10-fold cross-validation on BGL to evaluate the upgraded pipeline under natural operational conditions.
+* Combine our automatic threshold algorithm with the new Autoencoder.
+* Run full cross-validation tests across the entire dataset to verify consistent accuracy.
 
 ---
 
 ## Week 12 (October 20 - October 26)
 **Tasks Completed:**
-* Integrated autonomous Peaks-Over-Threshold (EVT / POT) mathematical thresholding fitted strictly on normal training data (Mode A).
-* Executed the canonical 10-fold benchmark on BGL, locking in 87.80% Mode A F1 and 91.05% PR-AUC (with 90.16% confirmed under the balanced view).
+* Successfully integrated the automatic thresholding method with our updated Autoencoder.
+* Ran complete cross-validation tests across all folds and confirmed high, reliable detection performance.
 
 **Tasks Planned for next week:**
-* Perform architectural ablation studies comparing the Autoencoder against linear PCA and Isolation Forest on identical features.
-* Test model resilience across time using a chronological split over the 7-month BGL operational history.
+* Compare our Autoencoder against simpler models like PCA and Isolation Forest on the exact same features.
+* Test how well the trained model holds up over time as system logs change over several months.
 
 ---
 
 ## Week 13 (October 27 - November 2)
 **Tasks Completed:**
-* Completed 10-fold ablation studies proving the Autoencoder outperforms linear PCA (+27.8% F1) and Isolation Forest (+85.7% F1) on the same features.
-* Evaluated an 80/20 chronological time-split across 7 months of logs, discovering a 68.91% out-of-vocabulary concept drift requiring periodic updates.
+* Ran comparison tests and proved that our deep learning Autoencoder clearly beats traditional machine learning baselines.
+* Tested the model over a chronological timeline and observed how new system updates introduce unfamiliar log patterns.
 
 **Tasks Planned for next week:**
-* Measure physical hardware inference latency, throughput, and memory consumption on commodity CPU.
-* Consolidate and cross-verify all experimental metrics across both HDFS and BGL datasets.
+* Measure the speed and memory usage of the model to prove it can run efficiently on regular computers.
+* Compare our results against existing published models from top research papers.
 
 ---
 
 ## Week 14 (November 3 - November 9)
 **Tasks Completed:**
-* Benchmarked physical edge execution on CPU, proving sub-millisecond latency (43.2 µs), 62,076 windows/sec throughput, and a 70.25 KB model footprint.
-* Built a comprehensive State-Of-The-Art comparison table contrasting our framework against published models like LogBERT, DeepLog, and LogFIT.
+* Tested the model's speed and memory footprint, proving it runs fast enough for real-time edge monitoring on a standard CPU.
+* Built a comprehensive comparison table showing how our lightweight model compares with large language models and transformers.
 
 **Tasks Planned for next week:**
-* Draft the comprehensive 6-chapter B.Tech capstone thesis and compile the final research paper manuscript.
-* Package clean, path-agnostic scripts and serialized models into a standalone submission repository.
+* Work on drafting the final project report chapters and research paper.
+* Clean up the codebase and organize all saved models and scripts so anyone can easily re-run them.
 
 ---
 
 ## Week 15 (November 10 - November 16)
 **Tasks Completed:**
-* Authored the complete 6-chapter LaTeX capstone thesis and finalized the camera-ready research paper draft.
-* Built the self-contained FINAL_SUBMISSION suite with path-agnostic reproduction scripts and created the final presentation slide decks.
+* Wrote and finalized the complete final project report and paper draft covering all our methodology and findings.
+* Packaged the clean code, saved models, and presentation slides into the final submission folder for the upcoming defense.
 
 **Tasks Planned for next week:**
-* Deliver the final Capstone Review 3 grand defense and present project outcomes to the evaluation panel.
-* Submit the finalized project thesis, repository artifacts, and research paper documentation for graduation clearance.
+* Deliver the final Capstone Review presentation and defend our work in front of the evaluation committee.
+* Complete all remaining departmental submission requirements and archive the final project files.
 
